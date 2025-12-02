@@ -44,7 +44,7 @@ export function splitStringAtIndex(str: string, index: number) {
     return [part1, part2];
 }
 
-export function isInvalidId({ strLength, strFormat }: ProductIdInfo) {
+export function isInvalidIdForPartOne({ strLength, strFormat }: ProductIdInfo) {
     if (!isEvenlyDivisibleByTwo(strLength)) {
         return false;
     }
@@ -54,51 +54,87 @@ export function isInvalidId({ strLength, strFormat }: ProductIdInfo) {
     return part1 === part2;
 }
 
-export function getInvalidIdsInRange({
-    start,
-    end,
-}: Range): [number[], number] {
-    const invalidIds = [];
-    let sumOfInvalidIds = 0;
+export function isInvalidIdForPartTwo({ strFormat, strLength }: ProductIdInfo) {
+    let invalid = false;
 
-    for (let i = start; i <= end; i++) {
-        if (isInvalidId(getProductIdInfo(i))) {
-            sumOfInvalidIds += i;
-            invalidIds.push(i);
+    for (let parts = 2; parts <= strLength; parts++) {
+        if (strLength % parts === 0) {
+            const partLength = strLength / parts;
+            const components = strFormat.split(strFormat.slice(0, partLength));
+
+            if (components.join('') === '') {
+                invalid = true;
+                break;
+            }
         }
     }
 
-    return [invalidIds, sumOfInvalidIds];
+    return invalid;
+}
+
+type Solution = {
+    p1: [number[], number];
+    p2: [number[], number];
+};
+
+export function getInvalidIdsInRange({ start, end }: Range): Solution {
+    const invalidIdsPartOne = [];
+    let sumOfInvalidIdsPartOne = 0;
+
+    const invalidIdsPartTwo = [];
+    let sumOfInvalidIdsPartTwo = 0;
+
+    for (let i = start; i <= end; i++) {
+        const idInfo = getProductIdInfo(i);
+
+        if (isInvalidIdForPartOne(idInfo)) {
+            sumOfInvalidIdsPartOne += i;
+            invalidIdsPartOne.push(i);
+        }
+
+        if (isInvalidIdForPartTwo(idInfo)) {
+            sumOfInvalidIdsPartTwo += i;
+            invalidIdsPartTwo.push(i);
+        }
+    }
+
+    return {
+        p1: [invalidIdsPartOne, sumOfInvalidIdsPartOne],
+        p2: [invalidIdsPartTwo, sumOfInvalidIdsPartTwo],
+    };
 }
 
 export function solve(raw: string) {
     const productIdRanges = parse(raw).map((r) => buildRange(r));
 
-    const [_, sumOfInvalidIds] = productIdRanges.reduce(
-        ([invalid, sum]: [number[], number], range) => {
-            const [invalidIdsInRange, sumOfIdsInRange] =
-                getInvalidIdsInRange(range);
+    const {
+        p1: [_, part1Solution],
+        p2: [__, part2Solution],
+    } = productIdRanges.reduce(
+        (acc: Solution, range) => {
+            const { p1, p2 } = getInvalidIdsInRange(range);
 
-            return [[...invalid, ...invalidIdsInRange], sum + sumOfIdsInRange];
+            acc.p1[0].push(...p1[0]);
+            acc.p1[1] += p1[1];
+
+            acc.p2[0].push(...p2[0]);
+            acc.p2[1] += p2[1];
+
+            return acc;
         },
-        [[], 0],
+        { p1: [[], 0], p2: [[], 0] },
     );
 
-    return { part1Solution: sumOfInvalidIds };
+    return { part1Solution, part2Solution };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     const raw = readInput(__dirname);
 
     // Assuming only Ids that contain 2 repeating components and nothing else, sum invalid Ids in ranges
-    const { part1Solution } = solve(raw);
+    const { part1Solution, part2Solution } = solve(raw);
     console.log(`Day 2, Part 1: ${part1Solution}`);
 
-    // How many times does a rotation click through OR land on 0 - messy, could make clearer, think it's way overcomplicated
-    // console.log(`Day 2, Part Two: ${solvePart2(raw)}`);
+    // Invalid Ids can contain repetitions (and only repetitions) of any length, sum invalid
+    console.log(`Day 2, Part 2: ${part2Solution}`);
 }
-
-/**
- * Notes
- *
- */
