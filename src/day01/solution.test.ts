@@ -5,6 +5,7 @@ import {
     getRotationInformation,
     rotateRight,
     rotateLeft,
+    solvePart2,
 } from './solution';
 
 const rawInput = `
@@ -54,4 +55,39 @@ L82
 
 test('Sample provided, 3 times at 0', () => {
     expect(solvePart1(rawProvided)).toEqual(3);
+});
+
+// Part Two
+test('Sample provided, 6 times crossed or ended at 0', () => {
+    expect(solvePart2(rawProvided)).toEqual(6);
+});
+
+const i1 = `
+L68
+`;
+
+test('Points to 0 once', () => {
+    expect(solvePart2(i1)).toEqual(1);
+});
+
+const i2 = `
+L68 
+L30
+R48
+`;
+
+test('Points to 0 twice', () => {
+    expect(solvePart2(i2)).toEqual(2);
+});
+
+const i3 = `
+L68 
+L30
+R48
+L5
+R60
+`;
+
+test('3 times', () => {
+    expect(solvePart2(i3)).toEqual(3);
 });
