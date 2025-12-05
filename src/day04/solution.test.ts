@@ -35,8 +35,8 @@ const stringGrid = `[[".",".","@","@",".","@","@","@","@","."]]`;
 test(`String of first row`, () =>
     expect(JSON.stringify(grid.slice(0, 1))).toEqual(stringGrid));
 
-test('Accessible rolls in sample equals 13', () =>
-    expect(solve(raw).p1).toEqual(13));
+test('Total rolls removed in p2 sample is ', () =>
+    expect(solve(raw, 2).p2).toEqual(43));
 
 // [0,0] - [0,1],[1,0],[1,1]
 // [0,1] - [0,0],[1,0],[1,1],[0,2],[1,2]

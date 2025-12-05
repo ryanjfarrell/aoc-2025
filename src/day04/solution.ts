@@ -12,17 +12,16 @@ export function parse(raw: string) {
 
 type WallInfo = ReturnType<typeof parse>;
 
+type Coords = [number, number];
+
 const roll = '@';
 
-// Col = x axis, Row = y axis
-// Dumbest way possible, can't think of the mathy pattern that makes it more efficient
-// Ignoring corners/sides won't save that much time for the code it adds
 function getSurroundingCoords(
-    [y, x]: [number, number],
+    [y, x]: Coords,
     rowCount: number,
     colCount: number,
 ) {
-    let checks: [number, number][] = [];
+    let checks: Coords[] = [];
 
     const isCorner =
         (x === 0 || x === colCount - 1) && (y === 0 || y === rowCount - 1);
@@ -72,7 +71,7 @@ function getSurroundingCoords(
 
 export function isRollAccessible(
     { grid, rowCount, columnCount }: WallInfo,
-    coords: [number, number],
+    coords: Coords,
 ) {
     let surroundingRolls = 0;
     let accessible = true;
@@ -91,28 +90,66 @@ export function isRollAccessible(
     return accessible;
 }
 
-export function solve(raw: string) {
-    const info = parse(raw);
+export function getAccessibleRolls(
+    info: WallInfo,
+    currentlyAccessibleCoords: Coords[],
+) {
+    for (let y = 0; y < info.rowCount; y++) {
+        for (let x = 0; x < info.columnCount; x++) {
+            const spot = info.grid[y][x];
 
-    const totalAccessibleRolls = info.grid.reduce((total, row, rowIndex) => {
-        const rowTotal = row.reduce((t, spot, colIndex) => {
             if (spot === roll) {
-                return isRollAccessible(info, [rowIndex, colIndex]) ? t + 1 : t;
-            } else {
-                return t;
+                const coordsToCheck: Coords = [y, x];
+                const accessible = isRollAccessible(info, coordsToCheck);
+
+                if (accessible) {
+                    currentlyAccessibleCoords.push(coordsToCheck);
+                }
             }
-        }, 0);
+        }
+    }
+}
 
-        return total + rowTotal;
-    }, 0);
+export function removeAccessibleRolls(info: WallInfo, rollsToRemove: Coords[]) {
+    for (const [y, x] of rollsToRemove) {
+        info.grid[y][x] = '.';
+    }
+}
 
-    return { p1: totalAccessibleRolls };
+export function solve(raw: string, part: 1 | 2) {
+    let info = parse(raw);
+    let currentlyAccessibleCoords: Coords[] = [];
+    let accessibleRollsStillExist = true;
+    let totalRemoved = 0;
+
+    while (accessibleRollsStillExist) {
+        getAccessibleRolls(info, currentlyAccessibleCoords);
+
+        console.log(
+            `Currently accessible rolls: ${currentlyAccessibleCoords.length}`,
+        );
+
+        const rollsToRemoveThisRound = currentlyAccessibleCoords.length;
+
+        if (rollsToRemoveThisRound === 0 || part === 1) {
+            accessibleRollsStillExist = false;
+            break;
+        }
+
+        if (part === 2) {
+            totalRemoved += rollsToRemoveThisRound;
+            removeAccessibleRolls(info, currentlyAccessibleCoords);
+            console.log(`Total removed so far: ${totalRemoved}\n----`);
+            currentlyAccessibleCoords = [];
+        }
+    }
+
+    return { p1: currentlyAccessibleCoords.length, p2: totalRemoved };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     const raw = readInput(__dirname);
 
-    const { p1 } = solve(raw);
-
-    console.log(`Day 4, Part 1, Accessible Rolls: ${p1}`);
+    console.log(`Day 4, Part 1, Accessible Rolls: ${solve(raw, 1).p1}`);
+    console.log(`Day 4, Part 2, Total Rolls Removed: ${solve(raw, 2).p2}`);
 }
